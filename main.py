@@ -26,7 +26,7 @@ def main():
         response = agent.invoke({"question": user_input}, config=config)  # type: ignore
         logger.info("Agent run complete\n")
 
-        print(response["sql_output"])
+        print(response["answer"])
 
     except Exception as e:
         logger.error("Agent run failed: %s", e)

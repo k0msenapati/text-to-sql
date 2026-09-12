@@ -4,6 +4,7 @@ from langchain.messages import HumanMessage, SystemMessage
 from db import db_manager
 from model import llm
 from state import AgentState
+import prompts
 
 logger = logging.getLogger(__name__)
 
@@ -16,33 +17,15 @@ def load_schema(state: AgentState):
         return {"schema": schema}
 
     except Exception as e:
-        logger.error("Failed to load schema: %s", e)
+        logger.error("[load_schema] Failed to load schema: %s", e)
         raise
 
 
 def generate_sql(state: AgentState):
-    database_schema = state["schema"]
-    database_dialect = "sqlite"
-    user_query = state["question"]
-
-    system_prompt = f"""You are an expert AI assistant that converts natural language questions into highly accurate SQL queries. 
-
-Given the following SQL database schema, understand the tables, columns, and relationships:
-
-<schema>
-{database_schema}
-</schema>
-
-### Instructions:
-1. Review the database schema carefully. Do not guess or invent column/table names.
-2. Generate a single valid SQL query matching the user's request.
-3. Ensure the syntax is compatible with {database_dialect} (e.g., PostgreSQL, MySQL, SQLite).
-4. Provide ONLY the raw SQL query. Do not include markdown code block formatting (```sql), explanation text, or conversational filler."""
-
-    user_prompt = f"""Convert the following natural language query into SQL:
-<query>
-{user_query}
-</query>"""
+    system_prompt = prompts.GENERATE_SQL_SYSTEM_PROMPT.format(database_dialect="sqlite")
+    user_prompt = prompts.GENERATE_SQL_HUMAN_PROMPT.format(
+        schema=state["schema"], question=state["question"]
+    )
 
     try:
         response = llm.invoke(
@@ -66,7 +49,7 @@ Given the following SQL database schema, understand the tables, columns, and rel
         return {"sql_query": sql}
 
     except Exception as e:
-        logger.error("Failed to generate SQL: %s", e)
+        logger.error("[generate_sql] Failed to generate SQL: %s", e)
         raise
 
 
@@ -80,5 +63,31 @@ def execute_sql(state: AgentState):
         return {"sql_output": str(sql_output)}
 
     except Exception as e:
-        logger.error("Failed to execute SQL '%s': %s", sql_query, e)
+        logger.error("[execute_sql] Failed to execute SQL '%s': %s", sql_query, e)
+        raise
+
+
+def format_answer(state: AgentState):
+    system_prompt = prompts.FORMAT_ANSWER_SYSTEM_PROMPT
+    user_prompt = prompts.FORMAT_ANSWER_HUMAN_PROMPT.format(
+        question=state["question"],
+        sql_query=state["sql_query"],
+        sql_output=state["sql_output"],
+    )
+
+    try:
+        response = llm.invoke(
+            [
+                SystemMessage(system_prompt),
+                HumanMessage(user_prompt),
+            ]
+        )
+        answer = response.content
+
+        logger.info("[format_answer] Answer formatted")
+
+        return {"answer": answer}
+
+    except Exception as e:
+        logger.error("[format_answer] Failed to format answer: %s", e)
         raise
