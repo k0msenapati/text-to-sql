@@ -3,13 +3,8 @@
 An intelligent Text-to-SQL agent that translates natural language into validated, executable SQL queries and converts the results into plain English.
 
 ```mermaid
----
-config:
-  flowchart:
-    curve: linear
----
 graph TD;
-	__start__([Start]):::first
+	__start__([Start])
 	load_schema(load_schema)
 	generate_sql(generate_sql)
 	validate_sql(validate_sql)
@@ -17,7 +12,7 @@ graph TD;
 	execute_sql(execute_sql)
 	diagnose_execution_error(diagnose_execution_error)
 	format_answer(format_answer)
-	__end__([End]):::last
+	__end__([End])
 	__start__ --> load_schema;
 	diagnose_execution_error --> repair_sql;
 	execute_sql -.-> diagnose_execution_error;
@@ -29,9 +24,6 @@ graph TD;
 	validate_sql -.-> format_answer;
 	validate_sql -.-> repair_sql;
 	format_answer --> __end__;
-	classDef default fill:#f2f0ff,line-height:1.2
-	classDef first fill-opacity:0
-	classDef last fill:#bfb6fc
 ```
 
 <details>

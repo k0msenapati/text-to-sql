@@ -12,10 +12,27 @@ from agent.utils import get_mermaid_graph
 
 
 def clean_mermaid_for_github(raw_mermaid: str) -> str:
-    """Cleans up raw LangGraph mermaid markup for optimal GitHub markdown rendering."""
-    cleaned = raw_mermaid.replace("<p>__start__</p>", "Start")
-    cleaned = cleaned.replace("<p>__end__</p>", "End")
-    return cleaned.strip()
+    """
+    Cleans up raw LangGraph mermaid markup for optimal GitHub rendering:
+    - Strips YAML config frontmatter
+    - Strips hardcoded classDef fill colors (e.g., fill:#f2f0ff) that cause white-on-white invisible text in GitHub dark mode
+    - Normalizes node names and labels
+    """
+    lines = []
+    in_yaml = False
+    for line in raw_mermaid.splitlines():
+        trimmed = line.strip()
+        if trimmed == "---":
+            in_yaml = not in_yaml
+            continue
+        if in_yaml or trimmed.startswith("classDef"):
+            continue
+
+        cleaned_line = line.replace("<p>__start__</p>", "Start").replace("<p>__end__</p>", "End")
+        cleaned_line = cleaned_line.replace(":::first", "").replace(":::last", "")
+        lines.append(cleaned_line)
+
+    return "\n".join(lines).strip()
 
 
 def update_readme(mermaid_code: str, readme_path: Path) -> bool:
