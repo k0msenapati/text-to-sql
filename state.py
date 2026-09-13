@@ -1,14 +1,14 @@
 from typing import TypedDict
 
 
-class AgentState(TypedDict):
+class AgentState(TypedDict, total=False):
     question: str
-    schema: str
-    sql_query: str
+    schema: str | None
+    sql_query: str | None
 
-    is_valid: bool
-    validation_error: str
-    retry_count: int
+    is_valid: bool | None
+    validation_error: str | None
+    retry_count: int | None
 
-    sql_output: str
-    answer: str
+    sql_output: str | None
+    answer: str | None

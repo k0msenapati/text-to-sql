@@ -28,7 +28,7 @@ graph_builder.add_edge("generate_sql", "validate_sql")
 def route_after_validation(state: AgentState) -> str:
     if state.get("is_valid"):
         return "execute_sql"
-    if state.get("retry_count", 0) < 3:
+    if (state.get("retry_count") or 0) < 3:
         return "repair_sql"
     return "format_answer"
 
