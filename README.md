@@ -2,12 +2,37 @@
 
 An intelligent Text-to-SQL agent that translates natural language into validated, executable SQL queries and converts the results into plain English.
 
-* **Input Processing:** Receives a natural language question about the database schema.
-* **SQL Generation:** Translates the question into an initial SQL query using Groq LLMs.
-* **Syntax Validation:** Checks the generated query for structural and syntactical correctness.
-* **Self-Correction Feedback Loop:** Automatically repairs invalid queries by feeding error messages back into the LLM if validation fails.
-* **Execution:** Runs the validated SQL query against a SQLite database.
-* **Response Formatting:** Converts the raw query results back into a clear, natural language answer for the user.
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([Start]):::first
+	load_schema(load_schema)
+	generate_sql(generate_sql)
+	validate_sql(validate_sql)
+	repair_sql(repair_sql)
+	execute_sql(execute_sql)
+	diagnose_execution_error(diagnose_execution_error)
+	format_answer(format_answer)
+	__end__([End]):::last
+	__start__ --> load_schema;
+	diagnose_execution_error --> repair_sql;
+	execute_sql -.-> diagnose_execution_error;
+	execute_sql -.-> format_answer;
+	generate_sql --> validate_sql;
+	load_schema --> generate_sql;
+	repair_sql --> validate_sql;
+	validate_sql -.-> execute_sql;
+	validate_sql -.-> format_answer;
+	validate_sql -.-> repair_sql;
+	format_answer --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+```
 
 <details>
 <summary><strong>Installation & Local Setup</strong></summary>
