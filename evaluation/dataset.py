@@ -178,10 +178,10 @@ BENCHMARK_CASES: list[EvalTestCase] = [
     # --- CHALLENGE / RUNTIME ERROR DIAGNOSTIC ---
     EvalTestCase(
         id="CHALLENGE-01",
-        question="Extract the field key from malformed json payload {malformed_data} using json_extract.",
-        ground_truth_sql="SELECT NULL;",
+        question="Safely extract 'field_key' from '{malformed_data}' using json_valid, returning NULL if the JSON is invalid.",
+        ground_truth_sql="SELECT CASE WHEN json_valid('{malformed_data}') THEN json_extract('{malformed_data}', '$.field_key') ELSE NULL END AS field_key;",
         difficulty="challenge",
-        category="Runtime Execution Error Handling",
+        category="Safe Function & Error Handling",
         order_matters=False,
     ),
 ]

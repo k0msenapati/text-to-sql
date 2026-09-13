@@ -19,7 +19,7 @@ def test_agent_recovers_from_invalid_table_name(run_agent):
     )
 
     assert result["is_valid"] is True
-    assert result["retry_count"] == 1
+    assert result["validation_retry_count"] == 1
     assert "customers" in result["sql_query"]
     assert result["answer"] == expected_answer
 
@@ -45,7 +45,7 @@ def test_agent_rejects_non_select_and_repairs(run_agent):
     )
 
     assert result["is_valid"] is True
-    assert result["retry_count"] == 1
+    assert result["validation_retry_count"] == 1
     assert "SELECT" in result["sql_query"].upper()
     assert "DELETE" not in result["sql_query"].upper()
 
@@ -68,7 +68,7 @@ def test_agent_recovers_from_syntax_error(run_agent):
     )
 
     assert result["is_valid"] is True
-    assert result["retry_count"] == 1
+    assert result["validation_retry_count"] == 1
     assert result["answer"] == expected_answer
 
 
@@ -92,7 +92,7 @@ def test_agent_max_retries_exhausted_does_not_crash(run_agent):
     )
 
     assert result["is_valid"] is False
-    assert result["retry_count"] == 3
+    assert result["validation_retry_count"] == 3
     assert result["validation_error"] is not None
     assert "no such table" in result["validation_error"]
     assert "unable to retrieve the data because the SQL query could not be validated" in result["answer"]
@@ -116,6 +116,6 @@ def test_agent_handles_empty_generated_query_and_repairs(run_agent):
     )
 
     assert result["is_valid"] is True
-    assert result["retry_count"] == 1
+    assert result["validation_retry_count"] == 1
     assert "SELECT * FROM orders;" in result["sql_query"]
     assert result["answer"] == expected_answer

@@ -84,7 +84,9 @@ def evaluate_single_case(case: EvalTestCase) -> CaseResult:
         is_valid = agent_response.get("is_valid", True)
         generated_sql = agent_response.get("sql_query")
         agent_answer = agent_response.get("answer")
-        retry_count = agent_response.get("retry_count", 0)
+        validation_retries = agent_response.get("validation_retry_count") or 0
+        execution_retries = agent_response.get("execution_retry_count") or 0
+        retry_count = validation_retries + execution_retries
 
         # Case: Query failed validation after maximum retries
         if not is_valid:
@@ -98,6 +100,23 @@ def evaluate_single_case(case: EvalTestCase) -> CaseResult:
                 ground_truth_sql=case.ground_truth_sql,
                 expected_rows=expected_rows,
                 error_message=agent_response.get("validation_error"),
+                agent_answer=agent_answer,
+                retry_count=retry_count,
+                duration_ms=elapsed_ms,
+            )
+
+        # Case: Query failed execution after maximum retries
+        if agent_response.get("execution_error"):
+            return CaseResult(
+                case_id=case.id,
+                question=case.question,
+                difficulty=case.difficulty,
+                category=case.category,
+                status=EvalStatus.EXECUTION_ERROR,
+                generated_sql=generated_sql,
+                ground_truth_sql=case.ground_truth_sql,
+                expected_rows=expected_rows,
+                error_message=f"{agent_response.get('execution_error')} (Diagnosis: {agent_response.get('diagnosis')})",
                 agent_answer=agent_answer,
                 retry_count=retry_count,
                 duration_ms=elapsed_ms,
@@ -138,18 +157,13 @@ def evaluate_single_case(case: EvalTestCase) -> CaseResult:
 
     except sqlite3.OperationalError as e:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
-        # NOTE: This happens specifically because execute_sql node crashes
-        # when a runtime query error occurs, since diagnose_exec_error is not yet implemented.
         return CaseResult(
             case_id=case.id,
             question=case.question,
             difficulty=case.difficulty,
             category=case.category,
             status=EvalStatus.EXECUTION_ERROR,
-            error_message=(
-                f"sqlite3.OperationalError: {e} "
-                "(Crashed during execution - diagnose_exec_error node not present)"
-            ),
+            error_message=f"sqlite3.OperationalError: {e}",
             ground_truth_sql=case.ground_truth_sql,
             expected_rows=expected_rows,
             duration_ms=elapsed_ms,

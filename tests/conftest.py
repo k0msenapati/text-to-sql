@@ -16,6 +16,7 @@ def run_agent():
         generated_sql: str,
         repaired_sql: list[str] | None = None,
         final_answer: str = "Here is the result based on your query.",
+        diagnosis: str = "The SQL query encountered a runtime error and requires modification.",
     ):
         mock_generator = MagicMock()
         mock_generator.invoke.return_value = AIMessage(content=generated_sql)
@@ -28,6 +29,9 @@ def run_agent():
         else:
             mock_repairer.invoke.return_value = AIMessage(content=generated_sql)
 
+        mock_diagnoser = MagicMock()
+        mock_diagnoser.invoke.return_value = AIMessage(content=diagnosis)
+
         mock_formatter = MagicMock()
         mock_formatter.invoke.return_value = AIMessage(content=final_answer)
 
@@ -36,6 +40,7 @@ def run_agent():
         with (
             patch("sql.generator.default_llm", mock_generator),
             patch("sql.repairer.default_llm", mock_repairer),
+            patch("sql.diagnoser.default_llm", mock_diagnoser),
             patch("sql.formatter.default_llm", mock_formatter),
         ):
             return agent.invoke({"question": question}, config=config)

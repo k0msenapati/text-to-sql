@@ -129,9 +129,8 @@ def main():
     if summary.execution_errors > 0:
         print(f"\n{YELLOW}{BOLD}[!] DIAGNOSTIC INSIGHT:{RESET}")
         print(
-            f"{YELLOW}   {summary.execution_errors} query(s) encountered runtime SQLite errors. "
-            f"Because the agent currently lacks a 'diagnose_exec_error' node after execute_sql, "
-            f"these queries could not be diagnosed or repaired at runtime.{RESET}"
+            f"{YELLOW}   {summary.execution_errors} query(s) encountered runtime SQLite errors that "
+            f"could not be resolved after recovery and repair attempts.{RESET}"
         )
 
     save_report_to_json(summary, args.output)
