@@ -2,7 +2,7 @@ import logging
 
 from database import get_schema, run_query, validate_sql_query
 from sql import format_sql_answer, generate_sql_query, repair_sql_query
-from state import AgentState
+from agent.state import AgentState
 
 logger = logging.getLogger(__name__)
 
@@ -53,17 +53,15 @@ def validate_sql(state: AgentState):
 
 def repair_sql(state: AgentState):
     question = state.get("question")
+    schema = state.get("schema")
+    sql_query = state.get("sql_query")
+
     if not question or not question.strip():
         raise ValueError("[repair_sql] 'question' is missing or empty in state")
-
-    schema = state.get("schema")
     if schema is None:
         raise ValueError("[repair_sql] 'schema' is missing or None in state")
-
-    if state.get("sql_query") is None:
+    if sql_query is None:
         raise ValueError("[repair_sql] 'sql_query' is missing or None in state")
-
-    sql_query = state.get("sql_query", "")
 
     validation_error = state.get("validation_error") or "Unknown validation error"
     retry_count = (state.get("retry_count") or 0) + 1
@@ -99,7 +97,9 @@ def execute_sql(state: AgentState):
 
 def format_answer(state: AgentState):
     if not state.get("is_valid", True):
-        error_msg = state.get("validation_error") or "Failed to generate a valid SQL query."
+        error_msg = (
+            state.get("validation_error") or "Failed to generate a valid SQL query."
+        )
         return {
             "answer": f"I was unable to retrieve the data because the SQL query could not be validated: {error_msg}"
         }

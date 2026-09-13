@@ -2,7 +2,7 @@ import logging
 from langchain.messages import HumanMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel
 
-from model import llm as default_llm
+from agent.model import llm as default_llm
 from prompts import GENERATE_SQL_HUMAN_PROMPT, GENERATE_SQL_SYSTEM_PROMPT
 from sql.cleaner import clean_sql_query
 

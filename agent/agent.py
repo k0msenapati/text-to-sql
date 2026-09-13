@@ -1,7 +1,7 @@
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
-from nodes import (
+from agent.nodes import (
     execute_sql,
     format_answer,
     generate_sql,
@@ -9,7 +9,7 @@ from nodes import (
     repair_sql,
     validate_sql,
 )
-from state import AgentState
+from agent.state import AgentState
 
 graph_builder = StateGraph(AgentState)
 

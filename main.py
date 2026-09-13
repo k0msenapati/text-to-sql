@@ -1,10 +1,11 @@
 import logging
 import os
 from uuid import uuid4
+from langchain_core.runnables import RunnableConfig
 
-from agent import agent
+from agent.agent import agent
+from agent.utils import get_graph
 
-# Clean, minimal log format
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -12,15 +13,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-config = {"configurable": {"thread_id": str(uuid4())}}
-
-
-def print_graph():
-    print("\n" + "=" * 45)
-    print("AGENT WORKFLOW GRAPH")
-    print("=" * 45)
-
-    print(agent.get_graph().draw_ascii())
+config: RunnableConfig = {"configurable": {"thread_id": f"conversation-{str(uuid4())}"}}
 
 
 def main():
@@ -34,17 +27,21 @@ def main():
             break
 
         if user_input.lower() == "graph":
-            print_graph()
+            print("\n" + "=" * 45)
+            print("AGENT WORKFLOW GRAPH")
+            print("=" * 45)
+
+            print(get_graph(agent))
             continue
 
         try:
-            response = agent.invoke({"question": user_input}, config=config)  # type: ignore
-            logger.info("Agent run complete\n")
+            response = agent.invoke({"question": user_input}, config=config)
+            logger.info("[main] Agent run complete\n")
 
             print(response["answer"])
 
         except Exception as e:
-            logger.error("Agent run failed: %s", e)
+            logger.error("[main] Agent run failed: %s", e)
             raise
 
 

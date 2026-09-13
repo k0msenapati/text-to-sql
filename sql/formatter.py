@@ -2,7 +2,7 @@ import logging
 from langchain.messages import HumanMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel
 
-from model import llm as default_llm
+from agent.model import llm as default_llm
 from prompts import FORMAT_ANSWER_HUMAN_PROMPT, FORMAT_ANSWER_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
