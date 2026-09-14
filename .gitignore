@@ -9,7 +9,10 @@ wheels/
 # Virtual environments
 .venv
 
+.files/
+.pytest_cache/
 .ruff_cache/
+.chainlit/
 
 .env
 data/

@@ -78,19 +78,35 @@ uv run python scripts/seed.py
 <details>
 <summary><strong>Running the Agent</strong></summary>
 
-Start the interactive CLI session:
+### 1. Web Chat UI (Recommended)
+Launch the ChatGPT-style conversational web interface with multi-turn memory and collapsible tool execution steps:
+
+```bash
+uv run chainlit run app.py
+```
+Open [http://localhost:8000](http://localhost:8000) in your browser.
+
+### 2. Interactive CLI
+Start the interactive CLI session in your terminal:
 
 ```bash
 uv run python main.py
 ```
 
-### Interactive Commands
-- **Ask questions**: Enter any query in natural language:
+### Interactive Queries & Examples
+- **Data queries**:
   - *"List all customers who live in Canada."*
   - *"What are the top 3 most expensive products?"*
   - *"Which product has the highest number of 5-star reviews?"*
-- **View Graph**: Type `graph` to view the LangGraph execution flow diagram in ASCII.
-- **Quit**: Type `exit` or `quit` to terminate the session.
+- **Schema & metadata queries**:
+  - *"What tables are in the database?"*
+  - *"What columns are in the orders table?"*
+- **Ambiguity & multi-turn resolution**:
+  - *"Show me recent sales"* (Prompts with concrete options)
+  - Follow-up: *"that order was placed by who?"* (Resolves using conversation history)
+- **CLI Commands**:
+  - Type `graph` to view the LangGraph execution flow diagram in ASCII.
+  - Type `exit` or `quit` to terminate the session.
 
 </details>
 
