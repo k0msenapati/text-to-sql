@@ -3,6 +3,7 @@ from typing import TypedDict
 
 class AgentState(TypedDict, total=False):
     question: str
+    intent: str | None
     schema: str | None
     sql_query: str | None
 

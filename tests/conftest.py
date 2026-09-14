@@ -4,6 +4,7 @@ import pytest
 from langchain_core.messages import AIMessage
 
 from agent.agent import agent
+from classifier import QueryIntent
 
 
 @pytest.fixture
@@ -17,7 +18,13 @@ def run_agent():
         repaired_sql: list[str] | None = None,
         final_answer: str = "Here is the result based on your query.",
         diagnosis: str = "The SQL query encountered a runtime error and requires modification.",
+        intent: str = "data_query",
     ):
+        mock_classifier_llm = MagicMock()
+        mock_structured_llm = MagicMock()
+        mock_structured_llm.invoke.return_value = QueryIntent(intent=intent)
+        mock_classifier_llm.with_structured_output.return_value = mock_structured_llm
+
         mock_generator = MagicMock()
         mock_generator.invoke.return_value = AIMessage(content=generated_sql)
 
@@ -38,6 +45,7 @@ def run_agent():
         config = {"configurable": {"thread_id": str(uuid4())}}
 
         with (
+            patch("classifier.classifier.default_llm", mock_classifier_llm),
             patch("sql.generator.default_llm", mock_generator),
             patch("sql.repairer.default_llm", mock_repairer),
             patch("sql.diagnoser.default_llm", mock_diagnoser),

@@ -2,10 +2,14 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from agent.nodes import (
+    classify_intent,
     diagnose_execution_error,
     execute_sql,
     format_answer,
+    format_meta,
     generate_sql,
+    handle_ambiguous_query,
+    handle_out_of_scope_query,
     load_schema,
     repair_sql,
     validate_sql,
@@ -13,6 +17,9 @@ from agent.nodes import (
 from agent.state import AgentState
 
 graph_builder = StateGraph(AgentState)
+
+
+graph_builder.add_node(classify_intent)
 
 graph_builder.add_node(load_schema)
 graph_builder.add_node(generate_sql)
@@ -22,7 +29,35 @@ graph_builder.add_node(execute_sql)
 graph_builder.add_node(diagnose_execution_error)
 graph_builder.add_node(format_answer)
 
-graph_builder.add_edge(START, "load_schema")
+graph_builder.add_node(format_meta)
+graph_builder.add_node(handle_ambiguous_query)
+graph_builder.add_node(handle_out_of_scope_query)
+
+graph_builder.add_edge(START, "classify_intent")
+
+
+def route_after_intent(state: AgentState) -> str:
+    intent = state.get("intent")
+    if intent == "metadata_query":
+        return "format_meta"
+    if intent == "ambiguous_query":
+        return "handle_ambiguous_query"
+    if intent == "out_of_scope_query":
+        return "handle_out_of_scope_query"
+    return "load_schema"
+
+
+graph_builder.add_conditional_edges(
+    "classify_intent",
+    route_after_intent,
+    {
+        "load_schema": "load_schema",
+        "format_meta": "format_meta",
+        "handle_ambiguous_query": "handle_ambiguous_query",
+        "handle_out_of_scope_query": "handle_out_of_scope_query",
+    },
+)
+
 graph_builder.add_edge("load_schema", "generate_sql")
 graph_builder.add_edge("generate_sql", "validate_sql")
 
@@ -67,6 +102,10 @@ graph_builder.add_conditional_edges(
 
 graph_builder.add_edge("diagnose_execution_error", "repair_sql")
 graph_builder.add_edge("format_answer", END)
+
+graph_builder.add_edge("format_meta", END)
+graph_builder.add_edge("handle_ambiguous_query", END)
+graph_builder.add_edge("handle_out_of_scope_query", END)
 
 memory = InMemorySaver()
 

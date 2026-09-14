@@ -7,6 +7,12 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from evaluation.dataset import BENCHMARK_CASES
+from evaluation.intent_dataset import INTENT_BENCHMARK_CASES
+from evaluation.intent_runner import (
+    IntentCaseResult,
+    run_intent_evaluation,
+    save_intent_report_to_json,
+)
 from evaluation.runner import (
     CaseResult,
     EvalStatus,
@@ -35,7 +41,7 @@ def status_badge(status: EvalStatus) -> str:
     return f"{RED}[CRASH]{RESET}"
 
 
-def print_case_result(res: CaseResult, verbose: bool = False):
+def print_sql_case_result(res: CaseResult, verbose: bool = False):
     badge = status_badge(res.status)
     time_str = f"{res.duration_ms:.0f}ms"
     diff_tag = f"[{res.difficulty.upper()}]"
@@ -60,41 +66,26 @@ def print_case_result(res: CaseResult, verbose: bool = False):
         print()
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Benchmark text-to-sql agent with execution accuracy (EX) against precomputed ground truth."
-    )
-    parser.add_argument(
-        "--difficulty",
-        choices=["easy", "medium", "hard", "challenge", "all"],
-        default="all",
-        help="Filter benchmark cases by difficulty level",
-    )
-    parser.add_argument(
-        "--case",
-        type=str,
-        default=None,
-        help="Run a specific test case by ID (e.g. EASY-01)",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Show detailed generated SQL and output for all cases",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="eval_report.json",
-        help="Path to save JSON evaluation report (default: eval_report.json)",
-    )
-    args = parser.parse_args()
+def print_intent_case_result(res: IntentCaseResult, verbose: bool = False):
+    badge = f"{GREEN}[PASS]{RESET}" if res.is_match else f"{RED}[FAIL]{RESET}"
+    time_str = f"{res.duration_ms:.0f}ms"
+    target_tag = f"[{res.expected_intent}]"
+    print(f" {badge} {target_tag:<22} {res.case_id}: {res.question} ({time_str})")
 
+    if verbose or not res.is_match:
+        print(f"        {CYAN}Expected:{RESET}  {res.expected_intent}")
+        print(f"        {YELLOW}Predicted:{RESET} {res.predicted_intent}")
+        if res.error_message:
+            print(f"        {RED}Error:{RESET}     {res.error_message}")
+        print()
+
+
+def run_sql_benchmark(args):
     selected_cases = BENCHMARK_CASES
     if args.case:
         selected_cases = [c for c in selected_cases if c.id.upper() == args.case.upper()]
         if not selected_cases:
-            print(f"{RED}Error: Test case '{args.case}' not found.{RESET}")
+            print(f"{RED}Error: SQL test case '{args.case}' not found.{RESET}")
             sys.exit(1)
     elif args.difficulty != "all":
         selected_cases = [c for c in selected_cases if c.difficulty == args.difficulty]
@@ -106,12 +97,11 @@ def main():
 
     summary = run_evaluation(
         cases=selected_cases,
-        on_case_done=lambda res: print_case_result(res, verbose=args.verbose),
+        on_case_done=lambda res: print_sql_case_result(res, verbose=args.verbose),
     )
 
-    # Print summary statistics
     print(f"\n{BOLD}{'=' * 75}{RESET}")
-    print(f"{BOLD}  BENCHMARK SUMMARY & DIAGNOSTICS{RESET}")
+    print(f"{BOLD}  SQL BENCHMARK SUMMARY & DIAGNOSTICS{RESET}")
     print(f"{BOLD}{'=' * 75}{RESET}")
     print(f" Total Queries Evaluated: {summary.total_queries}")
     print(f" Passed (Exact Match):    {GREEN}{summary.passed}{RESET} ({summary.accuracy_percentage}%)")
@@ -135,6 +125,103 @@ def main():
 
     save_report_to_json(summary, args.output)
     print(f"\n{CYAN}Detailed report saved to: {args.output}{RESET}\n")
+    return summary
+
+
+def run_intent_benchmark(args):
+    selected_cases = INTENT_BENCHMARK_CASES
+    if args.case:
+        selected_cases = [c for c in selected_cases if c.id.upper() == args.case.upper()]
+        if not selected_cases:
+            print(f"{RED}Error: Intent test case '{args.case}' not found.{RESET}")
+            sys.exit(1)
+    elif args.intent != "all":
+        selected_cases = [c for c in selected_cases if c.expected_intent == args.intent]
+
+    print(f"\n{BOLD}{'=' * 75}{RESET}")
+    print(f"{BOLD}  QUERY INTENT CLASSIFIER EVALUATION BENCHMARK{RESET}")
+    print(f"{BOLD}{'=' * 75}{RESET}")
+    print(f"Running {len(selected_cases)} intent cases against classifier...\n")
+
+    output_path = args.output if args.mode == "intent" else "eval_intent_report.json"
+    summary = run_intent_evaluation(
+        cases=selected_cases,
+        on_case_done=lambda res: print_intent_case_result(res, verbose=args.verbose),
+    )
+
+    print(f"\n{BOLD}{'=' * 75}{RESET}")
+    print(f"{BOLD}  INTENT CLASSIFIER BENCHMARK SUMMARY{RESET}")
+    print(f"{BOLD}{'=' * 75}{RESET}")
+    print(f" Total Queries Evaluated: {summary.total_queries}")
+    print(f" Passed (Correct Intent): {GREEN}{summary.passed}{RESET} ({summary.accuracy_percentage}%)")
+    print(f" Failed (Mismatch/Error): {RED if summary.failed > 0 else GREEN}{summary.failed}{RESET}")
+
+    print(f"\n{BOLD} Breakdown by Intent Class:{RESET}")
+    for intent, stats in summary.by_intent.items():
+        print(
+            f"   • {intent:<20}: {stats['passed']}/{stats['total']} correct ({stats['accuracy']}%)"
+        )
+
+    save_intent_report_to_json(summary, output_path)
+    print(f"\n{CYAN}Detailed report saved to: {output_path}{RESET}\n")
+    return summary
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Unified evaluation suite for Text-to-SQL agent and Query Intent Classifier."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["sql", "intent", "all"],
+        default=None,
+        help="Evaluation target: 'sql' for text-to-sql execution accuracy, 'intent' for query intent classifier, 'all' for both (default: auto-detected or 'sql')",
+    )
+    parser.add_argument(
+        "--difficulty",
+        choices=["easy", "medium", "hard", "challenge", "all"],
+        default="all",
+        help="Filter SQL benchmark cases by difficulty level",
+    )
+    parser.add_argument(
+        "--intent",
+        choices=["data_query", "metadata_query", "ambiguous_query", "out_of_scope_query", "all"],
+        default="all",
+        help="Filter intent benchmark cases by intent class",
+    )
+    parser.add_argument(
+        "--case",
+        type=str,
+        default=None,
+        help="Run a specific test case by ID (e.g. EASY-01 or DATA-01)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show detailed output for all cases",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="eval_report.json",
+        help="Path to save JSON evaluation report (default: eval_report.json)",
+    )
+    args = parser.parse_args()
+
+    # Auto-detect mode if not explicitly provided
+    if args.mode is None:
+        if args.case and any(args.case.upper().startswith(p) for p in ["DATA", "META", "AMBI", "OOS"]):
+            args.mode = "intent"
+        elif args.intent != "all":
+            args.mode = "intent"
+        else:
+            args.mode = "sql"
+
+    if args.mode in ("sql", "all"):
+        run_sql_benchmark(args)
+    if args.mode in ("intent", "all"):
+        run_intent_benchmark(args)
 
 
 if __name__ == "__main__":

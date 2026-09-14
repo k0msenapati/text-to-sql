@@ -1,6 +1,8 @@
 import logging
 
+from classifier import classify_query_intent
 from database import get_schema, run_query, validate_sql_query
+from metadata import format_meta_answer
 from sql import (
     diagnose_execution_error as diagnose_execution_error_query,
     format_sql_answer,
@@ -10,6 +12,58 @@ from sql import (
 from agent.state import AgentState
 
 logger = logging.getLogger(__name__)
+
+AMBIGUOUS_QUERY_RESPONSE = (
+    "Your query is ambiguous and requires additional information. "
+    "I cannot reply without more context. Please clarify your request."
+)
+
+OUT_OF_SCOPE_FALLBACK_MESSAGE = (
+    "I am a Text-to-SQL assistant designed to answer questions about the database. "
+    "Your request is out of scope. Please ask a database-related question."
+)
+
+
+def classify_intent(state: AgentState):
+    question = state.get("question")
+    if not question or not question.strip():
+        raise ValueError("[classify_intent] 'question' is missing or empty in state")
+
+    try:
+        intent = classify_query_intent(question=question)
+        logger.info("[classify_intent] Classified intent: %s", intent)
+        return {"intent": intent}
+    except Exception as e:
+        logger.error("[classify_intent] Failed to classify intent: %s", e)
+        raise
+
+
+def format_meta(state: AgentState):
+    question = state.get("question")
+    if not question or not question.strip():
+        raise ValueError("[format_meta] 'question' is missing or empty in state")
+
+    schema = state.get("schema")
+    if not schema:
+        schema = str(get_schema())
+
+    try:
+        answer = format_meta_answer(question=question, schema=schema)
+        logger.info("[format_meta] Metadata answer formatted")
+        return {"schema": schema, "answer": answer}
+    except Exception as e:
+        logger.error("[format_meta] Failed to format metadata answer: %s", e)
+        raise
+
+
+def handle_ambiguous_query(state: AgentState):
+    logger.info("[handle_ambiguous_query] Handling ambiguous query")
+    return {"answer": AMBIGUOUS_QUERY_RESPONSE}
+
+
+def handle_out_of_scope_query(state: AgentState):
+    logger.info("[handle_out_of_scope_query] Handling out-of-scope query")
+    return {"answer": OUT_OF_SCOPE_FALLBACK_MESSAGE}
 
 
 def load_schema(state: AgentState):
