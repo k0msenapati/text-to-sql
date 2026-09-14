@@ -47,7 +47,6 @@ INTENT_BENCHMARK_CASES: list[IntentTestCase] = [
         expected_intent="data_query",
         category="Data Aggregation",
     ),
-
     # --- METADATA QUERIES ---
     IntentTestCase(
         id="META-01",
@@ -85,7 +84,6 @@ INTENT_BENCHMARK_CASES: list[IntentTestCase] = [
         expected_intent="metadata_query",
         category="Constraint Inspection",
     ),
-
     # --- AMBIGUOUS QUERIES ---
     IntentTestCase(
         id="AMBI-01",
@@ -123,7 +121,6 @@ INTENT_BENCHMARK_CASES: list[IntentTestCase] = [
         expected_intent="ambiguous_query",
         category="Ambiguous Entity Reference",
     ),
-
     # --- OUT OF SCOPE QUERIES ---
     IntentTestCase(
         id="OOS-01",

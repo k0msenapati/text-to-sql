@@ -40,7 +40,7 @@ def evaluate_single_intent_case(case: IntentTestCase) -> IntentCaseResult:
     try:
         predicted = classify_query_intent(case.question)
         elapsed_ms = (time.perf_counter() - start_time) * 1000
-        is_match = (predicted == case.expected_intent)
+        is_match = predicted == case.expected_intent
 
         return IntentCaseResult(
             case_id=case.id,

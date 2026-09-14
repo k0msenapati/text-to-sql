@@ -6,6 +6,7 @@ An intelligent Text-to-SQL agent that translates natural language into validated
 graph TD;
 	__start__([Start])
 	classify_intent(classify_intent)
+	clarification_engine(clarification_engine)
 	load_schema(load_schema)
 	generate_sql(generate_sql)
 	validate_sql(validate_sql)
@@ -14,12 +15,13 @@ graph TD;
 	diagnose_execution_error(diagnose_execution_error)
 	format_answer(format_answer)
 	format_meta(format_meta)
-	handle_ambiguous_query(handle_ambiguous_query)
 	handle_out_of_scope_query(handle_out_of_scope_query)
 	__end__([End])
 	__start__ --> classify_intent;
+	clarification_engine -.-> __end__;
+	clarification_engine -.-> load_schema;
+	classify_intent -.-> clarification_engine;
 	classify_intent -.-> format_meta;
-	classify_intent -.-> handle_ambiguous_query;
 	classify_intent -.-> handle_out_of_scope_query;
 	classify_intent -.-> load_schema;
 	diagnose_execution_error --> repair_sql;
@@ -33,7 +35,6 @@ graph TD;
 	validate_sql -.-> repair_sql;
 	format_answer --> __end__;
 	format_meta --> __end__;
-	handle_ambiguous_query --> __end__;
 	handle_out_of_scope_query --> __end__;
 ```
 

@@ -1,3 +1,7 @@
+from prompts.clarification_prompts import (
+    CLARIFICATION_HUMAN_PROMPT,
+    CLARIFICATION_SYSTEM_PROMPT,
+)
 from prompts.classifier_prompts import (
     CLASSIFY_INTENT_HUMAN_PROMPT,
     CLASSIFY_INTENT_SYSTEM_PROMPT,
@@ -24,6 +28,8 @@ from prompts.sql_prompts import (
 )
 
 __all__ = [
+    "CLARIFICATION_SYSTEM_PROMPT",
+    "CLARIFICATION_HUMAN_PROMPT",
     "CLASSIFY_INTENT_SYSTEM_PROMPT",
     "CLASSIFY_INTENT_HUMAN_PROMPT",
     "FORMAT_META_SYSTEM_PROMPT",

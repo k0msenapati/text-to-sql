@@ -1,10 +1,9 @@
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
-import pytest
 from langchain_core.messages import AIMessage
 
 from agent.agent import agent
-from agent.nodes import AMBIGUOUS_QUERY_RESPONSE, OUT_OF_SCOPE_FALLBACK_MESSAGE
+from agent.nodes import OUT_OF_SCOPE_FALLBACK_MESSAGE
 from classifier import QueryIntent, classify_query_intent
 from metadata import format_meta_answer
 
@@ -19,8 +18,6 @@ def test_classify_query_intent_mocked():
     intent = classify_query_intent("What tables exist?", model=mock_llm)
     assert intent == "metadata_query"
     mock_llm.with_structured_output.assert_called_once_with(QueryIntent)
-
-
 
 
 def test_agent_routes_to_metadata_query():
@@ -53,21 +50,34 @@ def test_agent_routes_to_metadata_query():
 
 
 def test_agent_routes_to_ambiguous_query():
-    """Test agent routes ambiguous_query to handle_ambiguous_query and returns ambiguous notice."""
+    """Test agent routes ambiguous_query to clarification_engine and returns clarifying question."""
     question = "Can you show that?"
+    clarifying_question = "What would you like to see? 1. Customers 2. Orders"
 
     mock_classifier_llm = MagicMock()
     mock_structured_llm = MagicMock()
     mock_structured_llm.invoke.return_value = QueryIntent(intent="ambiguous_query")
     mock_classifier_llm.with_structured_output.return_value = mock_structured_llm
 
+    mock_clarify_llm = MagicMock()
+    mock_clarify_struct = MagicMock()
+    from clarification import ClarificationOutput
+
+    mock_clarify_struct.invoke.return_value = ClarificationOutput(
+        can_resolve=False,
+        clarification_question=clarifying_question,
+    )
+    mock_clarify_llm.with_structured_output.return_value = mock_clarify_struct
+
     config = {"configurable": {"thread_id": str(uuid4())}}
 
-    with patch("classifier.classifier.default_llm", mock_classifier_llm):
+    with (
+        patch("classifier.classifier.default_llm", mock_classifier_llm),
+        patch("clarification.engine.default_llm", mock_clarify_llm),
+    ):
         result = agent.invoke({"question": question}, config=config)
 
-    assert result["intent"] == "ambiguous_query"
-    assert result["answer"] == AMBIGUOUS_QUERY_RESPONSE
+    assert result["answer"] == clarifying_question
     assert result.get("sql_query") is None
     assert result.get("sql_output") is None
 
@@ -129,6 +139,12 @@ def test_metadata_formatter_direct():
 def test_live_intent_classification():
     """End-to-end integration test with live LLM checking classification accuracy."""
     assert classify_query_intent("Show top 5 products by price") == "data_query"
-    assert classify_query_intent("What columns are in the orders table?") == "metadata_query"
-    assert classify_query_intent("What is the weather like in Tokyo today?") == "out_of_scope_query"
+    assert (
+        classify_query_intent("What columns are in the orders table?")
+        == "metadata_query"
+    )
+    assert (
+        classify_query_intent("What is the weather like in Tokyo today?")
+        == "out_of_scope_query"
+    )
     assert classify_query_intent("huh?") == "ambiguous_query"

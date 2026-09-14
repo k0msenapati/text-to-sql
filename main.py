@@ -2,6 +2,7 @@ import logging
 import os
 from uuid import uuid4
 from langchain_core.runnables import RunnableConfig
+from langchain.messages import HumanMessage
 
 from agent.agent import agent
 from agent.utils import get_graph
@@ -35,7 +36,13 @@ def main():
             continue
 
         try:
-            response = agent.invoke({"question": user_input}, config=config)
+            response = agent.invoke(
+                {
+                    "question": user_input,
+                    "messages": [HumanMessage(content=user_input)],
+                },
+                config=config,
+            )
             logger.info("[main] Agent run complete\n")
 
             print(response["answer"])

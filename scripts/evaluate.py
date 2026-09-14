@@ -83,7 +83,9 @@ def print_intent_case_result(res: IntentCaseResult, verbose: bool = False):
 def run_sql_benchmark(args):
     selected_cases = BENCHMARK_CASES
     if args.case:
-        selected_cases = [c for c in selected_cases if c.id.upper() == args.case.upper()]
+        selected_cases = [
+            c for c in selected_cases if c.id.upper() == args.case.upper()
+        ]
         if not selected_cases:
             print(f"{RED}Error: SQL test case '{args.case}' not found.{RESET}")
             sys.exit(1)
@@ -104,7 +106,9 @@ def run_sql_benchmark(args):
     print(f"{BOLD}  SQL BENCHMARK SUMMARY & DIAGNOSTICS{RESET}")
     print(f"{BOLD}{'=' * 75}{RESET}")
     print(f" Total Queries Evaluated: {summary.total_queries}")
-    print(f" Passed (Exact Match):    {GREEN}{summary.passed}{RESET} ({summary.accuracy_percentage}%)")
+    print(
+        f" Passed (Exact Match):    {GREEN}{summary.passed}{RESET} ({summary.accuracy_percentage}%)"
+    )
     print(f" Result Mismatches:       {YELLOW}{summary.result_mismatches}{RESET}")
     print(f" Execution Errors:        {RED}{summary.execution_errors}{RESET}")
     print(f" Validation Errors:       {RED}{summary.validation_errors}{RESET}")
@@ -131,7 +135,9 @@ def run_sql_benchmark(args):
 def run_intent_benchmark(args):
     selected_cases = INTENT_BENCHMARK_CASES
     if args.case:
-        selected_cases = [c for c in selected_cases if c.id.upper() == args.case.upper()]
+        selected_cases = [
+            c for c in selected_cases if c.id.upper() == args.case.upper()
+        ]
         if not selected_cases:
             print(f"{RED}Error: Intent test case '{args.case}' not found.{RESET}")
             sys.exit(1)
@@ -153,8 +159,12 @@ def run_intent_benchmark(args):
     print(f"{BOLD}  INTENT CLASSIFIER BENCHMARK SUMMARY{RESET}")
     print(f"{BOLD}{'=' * 75}{RESET}")
     print(f" Total Queries Evaluated: {summary.total_queries}")
-    print(f" Passed (Correct Intent): {GREEN}{summary.passed}{RESET} ({summary.accuracy_percentage}%)")
-    print(f" Failed (Mismatch/Error): {RED if summary.failed > 0 else GREEN}{summary.failed}{RESET}")
+    print(
+        f" Passed (Correct Intent): {GREEN}{summary.passed}{RESET} ({summary.accuracy_percentage}%)"
+    )
+    print(
+        f" Failed (Mismatch/Error): {RED if summary.failed > 0 else GREEN}{summary.failed}{RESET}"
+    )
 
     print(f"\n{BOLD} Breakdown by Intent Class:{RESET}")
     for intent, stats in summary.by_intent.items():
@@ -185,7 +195,13 @@ def main():
     )
     parser.add_argument(
         "--intent",
-        choices=["data_query", "metadata_query", "ambiguous_query", "out_of_scope_query", "all"],
+        choices=[
+            "data_query",
+            "metadata_query",
+            "ambiguous_query",
+            "out_of_scope_query",
+            "all",
+        ],
         default="all",
         help="Filter intent benchmark cases by intent class",
     )
@@ -211,7 +227,9 @@ def main():
 
     # Auto-detect mode if not explicitly provided
     if args.mode is None:
-        if args.case and any(args.case.upper().startswith(p) for p in ["DATA", "META", "AMBI", "OOS"]):
+        if args.case and any(
+            args.case.upper().startswith(p) for p in ["DATA", "META", "AMBI", "OOS"]
+        ):
             args.mode = "intent"
         elif args.intent != "all":
             args.mode = "intent"

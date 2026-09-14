@@ -1,5 +1,7 @@
 import logging
+from langchain_core.messages import AIMessage, HumanMessage
 
+from clarification import format_clarification_response, resolve_or_clarify_query
 from classifier import classify_query_intent
 from database import get_schema, run_query, validate_sql_query
 from metadata import format_meta_answer
@@ -13,11 +15,6 @@ from agent.state import AgentState
 
 logger = logging.getLogger(__name__)
 
-AMBIGUOUS_QUERY_RESPONSE = (
-    "Your query is ambiguous and requires additional information. "
-    "I cannot reply without more context. Please clarify your request."
-)
-
 OUT_OF_SCOPE_FALLBACK_MESSAGE = (
     "I am a Text-to-SQL assistant designed to answer questions about the database. "
     "Your request is out of scope. Please ask a database-related question."
@@ -25,16 +22,71 @@ OUT_OF_SCOPE_FALLBACK_MESSAGE = (
 
 
 def classify_intent(state: AgentState):
+    messages = state.get("messages") or []
     question = state.get("question")
+    if not question and messages:
+        question = str(messages[-1].content)
+
     if not question or not question.strip():
         raise ValueError("[classify_intent] 'question' is missing or empty in state")
 
     try:
         intent = classify_query_intent(question=question)
         logger.info("[classify_intent] Classified intent: %s", intent)
-        return {"intent": intent}
+
+        updates: dict[str, str | list] = {"intent": intent, "question": question}
+        if not messages or messages[-1].content != question:
+            updates["messages"] = [HumanMessage(content=question)]
+        return updates
     except Exception as e:
         logger.error("[classify_intent] Failed to classify intent: %s", e)
+        raise
+
+
+def clarification_engine(state: AgentState):
+    question = state.get("question")
+    if not question or not question.strip():
+        raise ValueError(
+            "[clarification_engine] 'question' is missing or empty in state"
+        )
+
+    messages = state.get("messages") or []
+    schema = state.get("schema")
+    if not schema:
+        schema = str(get_schema())
+
+    try:
+        result = resolve_or_clarify_query(
+            question=question,
+            messages=messages,
+            schema=schema,
+        )
+
+        if result.can_resolve and result.resolved_query:
+            logger.info(
+                "[clarification_engine] Query resolved from history to: %s",
+                result.resolved_query,
+            )
+            return {
+                "question": result.resolved_query,
+                "intent": "data_query",
+                "schema": schema,
+                "clarification_needed": False,
+            }
+        else:
+            clarification_msg = format_clarification_response(result)
+            logger.info(
+                "[clarification_engine] Generated clarifying response: %s",
+                clarification_msg,
+            )
+            return {
+                "answer": clarification_msg,
+                "messages": [AIMessage(content=clarification_msg)],
+                "schema": schema,
+                "clarification_needed": True,
+            }
+    except Exception as e:
+        logger.error("[clarification_engine] Failed during clarification: %s", e)
         raise
 
 
@@ -50,20 +102,22 @@ def format_meta(state: AgentState):
     try:
         answer = format_meta_answer(question=question, schema=schema)
         logger.info("[format_meta] Metadata answer formatted")
-        return {"schema": schema, "answer": answer}
+        return {
+            "schema": schema,
+            "answer": answer,
+            "messages": [AIMessage(content=answer)],
+        }
     except Exception as e:
         logger.error("[format_meta] Failed to format metadata answer: %s", e)
         raise
 
 
-def handle_ambiguous_query(state: AgentState):
-    logger.info("[handle_ambiguous_query] Handling ambiguous query")
-    return {"answer": AMBIGUOUS_QUERY_RESPONSE}
-
-
 def handle_out_of_scope_query(state: AgentState):
     logger.info("[handle_out_of_scope_query] Handling out-of-scope query")
-    return {"answer": OUT_OF_SCOPE_FALLBACK_MESSAGE}
+    return {
+        "answer": OUT_OF_SCOPE_FALLBACK_MESSAGE,
+        "messages": [AIMessage(content=OUT_OF_SCOPE_FALLBACK_MESSAGE)],
+    }
 
 
 def load_schema(state: AgentState):
@@ -222,17 +276,15 @@ def format_answer(state: AgentState):
         error_msg = state.get("execution_error")
         diagnosis = state.get("diagnosis")
         diag_suffix = f" Diagnosis: {diagnosis}" if diagnosis else ""
-        return {
-            "answer": f"I was unable to retrieve the data because a database execution error occurred: {error_msg}.{diag_suffix}"
-        }
+        answer = f"I was unable to retrieve the data because a database execution error occurred: {error_msg}.{diag_suffix}"
+        return {"answer": answer, "messages": [AIMessage(content=answer)]}
 
     if not state.get("is_valid", True):
         error_msg = (
             state.get("validation_error") or "Failed to generate a valid SQL query."
         )
-        return {
-            "answer": f"I was unable to retrieve the data because the SQL query could not be validated: {error_msg}"
-        }
+        answer = f"I was unable to retrieve the data because the SQL query could not be validated: {error_msg}"
+        return {"answer": answer, "messages": [AIMessage(content=answer)]}
 
     question = state.get("question")
     if not question or not question.strip():
@@ -248,7 +300,7 @@ def format_answer(state: AgentState):
             sql_output=sql_output,
         )
         logger.info("[format_answer] Answer formatted")
-        return {"answer": answer}
+        return {"answer": answer, "messages": [AIMessage(content=answer)]}
     except Exception as e:
         logger.error("[format_answer] Failed to format answer: %s", e)
         raise
