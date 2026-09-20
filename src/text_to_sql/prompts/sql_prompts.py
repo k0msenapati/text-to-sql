@@ -7,10 +7,14 @@ Rules:
 4. Text & Name Matching: When filtering on human names or free-text search terms (e.g. 'Bob', 'Alice', product keywords), use case-insensitive matching (e.g. LOWER(column) LIKE '%keyword%' or column LIKE '%keyword%') rather than strict exact equality, unless an exact full match is explicitly specified.
 5. Null Safety: Wrap aggregations like sums in COALESCE (e.g. COALESCE(SUM(total_amount), 0)) so queries return 0 rather than NULL if no records match.
 6. Ensure all non-aggregated columns in SELECT are properly included in GROUP BY when aggregating.
-7. Return ONLY the raw SQL query inside a markdown code block. Do not include any explanations, pleasantries, or introductory text."""
+7. Context Resolution: Use the conversation history to resolve any follow-up references, entity nicknames, pronouns, or contextual constraints mentioned in earlier turns.
+8. Return ONLY the raw SQL query inside a markdown code block. Do not include any explanations, pleasantries, or introductory text."""
 
 GENERATE_SQL_HUMAN_PROMPT = """Database Schema:
 {schema}
+
+Conversation History:
+{history}
 
 User Query:
 {question}"""
