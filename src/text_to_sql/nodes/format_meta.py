@@ -44,7 +44,7 @@ def format_meta(state: AgentState):
 
     schema = state.get("schema")
     if not schema:
-        schema = str(get_schema())
+        schema = get_schema()
 
     try:
         answer = format_meta_answer(question=question, schema=schema)

@@ -146,5 +146,27 @@ def test_agent_resolves_ambiguous_query_via_history():
             res2["answer"]
             == "Orders bought by Canadian customers: Order 102, Order 105."
         )
-        # Messages should contain both turns
         assert len(res2["messages"]) >= 4
+
+
+def test_resolve_entity_correction_from_history():
+    """Verify that providing an entity correction like 'Bob Jones' resolves to a full query."""
+    mock_llm = MagicMock()
+    mock_struct = MagicMock()
+    mock_struct.invoke.return_value = ClarificationOutput(
+        can_resolve=True,
+        resolved_query="What was the total amount spent by Bob Jones?",
+    )
+    mock_llm.with_structured_output.return_value = mock_struct
+
+    res = resolve_or_clarify_query(
+        question="Bob Jones",
+        messages=[
+            HumanMessage(content="what was amount spent by Bob?"),
+            AIMessage(content="no records found for Bob"),
+        ],
+        schema="CREATE TABLE customers (...);",
+        model=mock_llm,
+    )
+    assert res.can_resolve is True
+    assert res.resolved_query == "What was the total amount spent by Bob Jones?"

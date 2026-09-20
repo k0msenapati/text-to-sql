@@ -119,7 +119,7 @@ def clarification_engine(state: AgentState):
     messages = state.get("messages") or []
     schema = state.get("schema")
     if not schema:
-        schema = str(get_schema())
+        schema = get_schema()
 
     try:
         result = resolve_or_clarify_query(
@@ -150,6 +150,8 @@ def clarification_engine(state: AgentState):
                 "messages": [AIMessage(content=clarification_msg)],
                 "schema": schema,
                 "clarification_needed": True,
+                "sql_query": None,
+                "sql_output": None,
             }
     except Exception as e:
         logger.error("[clarification_engine] Failed during clarification: %s", e)

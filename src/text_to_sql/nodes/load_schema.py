@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def load_schema(state: AgentState):
     """LangGraph node: Loads the database schema into state."""
     try:
-        schema = str(get_schema())
+        schema = get_schema()
         logger.info("[load_schema] Schema loaded successfully")
         return {"schema": schema}
     except Exception as e:
