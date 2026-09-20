@@ -77,7 +77,20 @@ def classify_intent(state: AgentState):
         intent = classify_query_intent(question=question)
         logger.info("[classify_intent] Classified intent: %s", intent)
 
-        updates: dict[str, str | list] = {"intent": intent, "question": question}
+        updates: AgentState = {
+            "intent": intent,
+            "question": question,
+            "sql_query": None,
+            "sql_output": None,
+            "is_valid": None,
+            "validation_error": None,
+            "validation_retry_count": 0,
+            "execution_error": None,
+            "execution_retry_count": 0,
+            "diagnosis": None,
+            "clarification_needed": None,
+            "answer": None,
+        }
         if not messages or messages[-1].content != question:
             updates["messages"] = [HumanMessage(content=question)]
         return updates
