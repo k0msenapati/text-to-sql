@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 from uuid import uuid4
 
 import chainlit as cl
@@ -9,7 +9,7 @@ from text_to_sql.graph import agent
 from text_to_sql.state import AgentState
 
 
-@cl.set_starters # type: ignore
+@cl.set_starters  # type: ignore
 async def set_starters():
     return [
         cl.Starter(
@@ -54,9 +54,12 @@ async def on_message(message: cl.Message):
                 "question": message.content,
                 "messages": [HumanMessage(content=message.content)],
             }
-            response: dict[str, Any] = await agent.ainvoke(
-                input_state,
-                config=config,
+            response: AgentState = cast(
+                AgentState,
+                await agent.ainvoke(
+                    input_state,
+                    config=config,
+                ),
             )
             intent = response.get("intent", "data_query")
             run_step.output = f"Identified Intent: `{intent}`"
@@ -66,7 +69,8 @@ async def on_message(message: cl.Message):
             return
 
     sql_query = response.get("sql_query")
-    if sql_query:
+    intent = response.get("intent")
+    if intent == "data_query" and sql_query:
         async with cl.Step(name="Executed SQL Query", type="tool") as sql_step:
             sql_step.output = f"```sql\n{sql_query}\n```"
 
