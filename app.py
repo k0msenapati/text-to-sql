@@ -5,8 +5,8 @@ import chainlit as cl
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from agent.agent import agent
-from agent.state import AgentState
+from text_to_sql.graph import agent
+from text_to_sql.state import AgentState
 
 
 @cl.set_starters # type: ignore

@@ -3,17 +3,19 @@ import argparse
 from pathlib import Path
 import sys
 
-# Ensure project root is on sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Ensure project root and src are on sys.path
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(root_dir / "src"))
+sys.path.insert(0, str(root_dir))
 
-from evaluation.dataset import BENCHMARK_CASES
-from evaluation.intent_dataset import INTENT_BENCHMARK_CASES
-from evaluation.intent_runner import (
+from evals.dataset import BENCHMARK_CASES
+from evals.intent_dataset import INTENT_BENCHMARK_CASES
+from evals.intent_runner import (
     IntentCaseResult,
     run_intent_evaluation,
     save_intent_report_to_json,
 )
-from evaluation.runner import (
+from evals.runner import (
     CaseResult,
     EvalStatus,
     run_evaluation,
@@ -149,7 +151,7 @@ def run_intent_benchmark(args):
     print(f"{BOLD}{'=' * 75}{RESET}")
     print(f"Running {len(selected_cases)} intent cases against classifier...\n")
 
-    output_path = args.output if args.mode == "intent" else "eval_intent_report.json"
+    output_path = args.output if args.mode == "intent" else "reports/eval_intent_report.json"
     summary = run_intent_evaluation(
         cases=selected_cases,
         on_case_done=lambda res: print_intent_case_result(res, verbose=args.verbose),
@@ -220,8 +222,8 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        default="eval_report.json",
-        help="Path to save JSON evaluation report (default: eval_report.json)",
+        default="reports/eval_report.json",
+        help="Path to save JSON evaluation report (default: reports/eval_report.json)",
     )
     args = parser.parse_args()
 

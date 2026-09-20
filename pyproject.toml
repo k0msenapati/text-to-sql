@@ -1,7 +1,7 @@
 [project]
-name = "langgraph-basic"
+name = "text-to-sql"
 version = "0.1.0"
-description = "Add your description here"
+description = "An intelligent Text-to-SQL agent with LangGraph"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -13,11 +13,25 @@ dependencies = [
     "python-dotenv>=1.2.3",
 ]
 
+[project.scripts]
+cli = "text_to_sql.cli:main"
+web = "text_to_sql.web:run"
+
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = ["src", "."]
+
+
+
 

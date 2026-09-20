@@ -4,11 +4,13 @@ from pathlib import Path
 import re
 import sys
 
-# Ensure project root is on sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Ensure project root and src are on sys.path
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(root_dir / "src"))
+sys.path.insert(0, str(root_dir))
 
-from agent.agent import agent
-from agent.utils import get_mermaid_graph
+from text_to_sql.graph import agent
+from text_to_sql.utils import get_mermaid_graph
 
 
 def clean_mermaid_for_github(raw_mermaid: str) -> str:

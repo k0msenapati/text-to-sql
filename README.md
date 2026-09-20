@@ -82,7 +82,8 @@ uv run python scripts/seed.py
 Launch the ChatGPT-style conversational web interface with multi-turn memory and collapsible tool execution steps:
 
 ```bash
-uv run chainlit run app.py
+uv run web
+# or: uv run chainlit run app.py
 ```
 Open [http://localhost:8000](http://localhost:8000) in your browser.
 
@@ -90,7 +91,8 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 Start the interactive CLI session in your terminal:
 
 ```bash
-uv run python main.py
+uv run cli
+# or: uv run python cli.py
 ```
 
 ### Interactive Queries & Examples
@@ -116,7 +118,14 @@ uv run python main.py
 Execute the automated test suite with `pytest`:
 
 ```bash
+# Run all tests
 uv run pytest
+
+# Run fast unit tests
+uv run pytest tests/unit
+
+# Run integration tests
+uv run pytest tests/integration
 ```
 
 The test suite covers:
@@ -152,9 +161,9 @@ uv run python scripts/evaluate.py
   ```
 - **Custom report file**:
   ```bash
-  uv run python scripts/evaluate.py --output eval_report.json
+  uv run python scripts/evaluate.py --output reports/eval_report.json
   ```
 
-Benchmark statistics and error diagnostics are displayed in the terminal, and detailed results are saved to `eval_report.json`.
+Benchmark statistics and error diagnostics are displayed in the terminal, and detailed results are saved to `reports/eval_report.json`.
 
 </details>

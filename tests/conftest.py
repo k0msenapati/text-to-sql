@@ -3,8 +3,8 @@ from uuid import uuid4
 import pytest
 from langchain_core.messages import AIMessage
 
-from agent.agent import agent
-from classifier import QueryIntent
+from text_to_sql.graph import agent
+from text_to_sql.nodes import QueryIntent
 
 
 @pytest.fixture
@@ -45,11 +45,11 @@ def run_agent():
         config = {"configurable": {"thread_id": str(uuid4())}}
 
         with (
-            patch("classifier.classifier.default_llm", mock_classifier_llm),
-            patch("sql.generator.default_llm", mock_generator),
-            patch("sql.repairer.default_llm", mock_repairer),
-            patch("sql.diagnoser.default_llm", mock_diagnoser),
-            patch("sql.formatter.default_llm", mock_formatter),
+            patch("text_to_sql.nodes.classify.default_llm", mock_classifier_llm),
+            patch("text_to_sql.nodes.generate_sql.default_llm", mock_generator),
+            patch("text_to_sql.nodes.repair_sql.default_llm", mock_repairer),
+            patch("text_to_sql.nodes.diagnose.default_llm", mock_diagnoser),
+            patch("text_to_sql.nodes.format_answer.default_llm", mock_formatter),
         ):
             return agent.invoke({"question": question}, config=config)
 

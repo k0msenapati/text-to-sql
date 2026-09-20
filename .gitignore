@@ -16,6 +16,7 @@ wheels/
 
 .env
 data/
+reports/
 eval_report.json
 eval_intent_report.json
 *report*.json
