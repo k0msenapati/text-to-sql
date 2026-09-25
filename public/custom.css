@@ -1,0 +1,195 @@
+/* Chainlit Native Design System Match */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --app-bg: hsl(var(--background, 0 0% 13%));
+  --app-fg: hsl(var(--foreground, 0 0% 93%));
+  --app-card: hsl(var(--card, 0 0% 18%));
+  --app-card-fg: hsl(var(--card-foreground, 210 40% 98%));
+  --app-popover: hsl(var(--popover, 0 0% 18%));
+  --app-border: hsl(var(--border, 0 1% 26%));
+  --app-input: hsl(var(--input, 0 1% 26%));
+  --app-muted: hsl(var(--muted, 0 1% 26%));
+  --app-muted-fg: hsl(var(--muted-foreground, 0 0% 71%));
+  --app-primary: hsl(var(--primary, 340 92% 52%));
+  --app-primary-fg: hsl(var(--primary-foreground, 0 0% 100%));
+  --app-secondary: hsl(var(--secondary, 0 0% 19%));
+  --app-accent: hsl(var(--accent, 0 0% 26%));
+  --app-font: var(--font-sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+/* Modal Backdrop */
+.app-graph-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+  font-family: var(--app-font);
+}
+
+.app-graph-modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Modal Dialog matching shadcn/ui Dialog in Chainlit */
+.app-graph-modal {
+  background-color: var(--app-card);
+  color: var(--app-card-fg);
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  width: 90vw;
+  height: 86vh;
+  max-width: 1300px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+  overflow: hidden;
+  transform: scale(0.97);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-graph-modal-backdrop.open .app-graph-modal {
+  transform: scale(1);
+}
+
+/* Modal Header */
+.app-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background-color: var(--app-card);
+  border-bottom: 1px solid var(--app-border);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-modal-title {
+  color: var(--app-fg);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.app-modal-badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  background-color: var(--app-secondary);
+  color: var(--app-muted-fg);
+  border: 1px solid var(--app-border);
+}
+
+/* Modal Controls */
+.app-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+.app-btn-tool {
+  background-color: transparent;
+  border: 1px solid var(--app-border);
+  color: var(--app-muted-fg);
+  border-radius: 6px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.app-btn-tool:hover {
+  background-color: var(--app-accent);
+  color: var(--app-fg);
+  border-color: var(--app-muted-fg);
+}
+
+.app-btn-close {
+  background: none;
+  border: none;
+  color: var(--app-muted-fg);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  font-size: 1.1rem;
+}
+
+.app-btn-close:hover {
+  background-color: var(--app-accent);
+  color: var(--app-fg);
+}
+
+/* Modal Body Canvas */
+.app-modal-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--app-bg);
+  cursor: grab;
+  user-select: none;
+}
+
+.app-modal-body:active {
+  cursor: grabbing;
+}
+
+.app-modal-viewport {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform 0.05s linear;
+}
+
+.app-modal-viewport svg {
+  max-width: none;
+  max-height: none;
+}
+
+/* Modal Footer */
+.app-modal-footer {
+  padding: 8px 20px;
+  background-color: var(--app-card);
+  border-top: 1px solid var(--app-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--app-muted-fg);
+}

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow Graph - Text-to-SQL Assistant</title>
+  <link rel="icon" type="image/svg+xml" href="/public/workflow-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/lib/viz-standalone.js"></script>
+  <style>
+    :root {
+      --background: #212121;
+      --foreground: #ececec;
+      --card: #2e2e2e;
+      --card-foreground: #ececec;
+      --border: #383838;
+      --muted: #383838;
+      --muted-foreground: #a1a1aa;
+      --accent: #383838;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--background);
+      color: var(--foreground);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      padding: 0 16px;
+      background-color: var(--background);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+      gap: 16px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-left svg {
+      color: var(--muted-foreground);
+    }
+    h1 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--foreground);
+    }
+    .badge {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      background-color: var(--card);
+      color: var(--muted-foreground);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      text-decoration: none;
+      background-color: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+    .nav-btn:hover {
+      background-color: var(--card);
+      color: var(--foreground);
+    }
+    .nav-btn.active {
+      background-color: var(--card);
+      color: var(--foreground);
+      border-color: var(--border);
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-icon {
+      background-color: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-icon:hover {
+      background-color: var(--card);
+      color: var(--foreground);
+      border-color: var(--muted-foreground);
+    }
+    main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--background);
+      cursor: grab;
+      user-select: none;
+    }
+    main:active {
+      cursor: grabbing;
+    }
+    #graph-viewport {
+      transform-origin: center center;
+      transition: transform 0.05s linear;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    #graph-viewport svg {
+      max-width: none;
+      max-height: none;
+    }
+    .hint-bar {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      pointer-events: none;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 50%;
+      border-top-color: var(--foreground);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="6" height="6" rx="1"/>
+        <rect x="15" y="3" width="6" height="6" rx="1"/>
+        <rect x="9" y="15" width="6" height="6" rx="1"/>
+        <path d="M6 9v3a1 1 0 0 0 1 1h5"/>
+        <path d="M18 9v3a1 1 0 0 1-1 1h-5"/>
+        <path d="M12 13v2"/>
+      </svg>
+      <h1>Workflow Graph</h1>
+      <span class="badge">LangGraph</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="/public/workflow.html" class="nav-btn active">Workflow Graph</a>
+      <a href="/public/schema.html" class="nav-btn">DB Schema</a>
+      <a href="/" class="nav-btn">← Back to Chat</a>
+    </div>
+
+    <div class="controls">
+      <button class="btn-icon" title="Zoom In" onclick="zoom(1.2)">+</button>
+      <button class="btn-icon" title="Zoom Out" onclick="zoom(0.8)">−</button>
+      <button class="btn-icon" title="Reset View" onclick="resetTransform()">↺</button>
+      <button class="btn-icon" title="Toggle Fullscreen" onclick="toggleFullscreen()">⛶</button>
+    </div>
+  </header>
+
+  <main id="canvas-container">
+    <div id="graph-viewport">
+      <div class="loading-spinner"></div>
+    </div>
+    <div class="hint-bar">Scroll to Zoom • Drag to Pan</div>
+  </main>
+
+  <script>
+    const GRAPHVIZ_SRC = `digraph Workflow {
+    graph [
+        rankdir=TB,
+        bgcolor="transparent",
+        fontname="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        nodesep=0.4,
+        ranksep=0.6,
+        pad="0.4"
+    ];
+    node [
+        shape=box,
+        style="rounded,filled",
+        fillcolor="#27272a",
+        fontcolor="#f4f4f5",
+        color="#3f3f46",
+        penwidth=1.5,
+        fontname="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontsize=12,
+        margin="0.25,0.12"
+    ];
+    edge [
+        color="#71717a",
+        penwidth=1.5,
+        fontname="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontsize=10,
+        fontcolor="#a1a1aa"
+    ];
+
+    Start [shape=oval, fillcolor="#27272a", fontcolor="#f4f4f5", color="#3f3f46", label="Start", width=1.1];
+    End [shape=oval, fillcolor="#27272a", fontcolor="#f4f4f5", color="#3f3f46", label="End", width=1.1];
+
+    Start -> classify_intent;
+    clarification_engine -> End [style=dashed, label="clarification_needed"];
+    clarification_engine -> load_schema [style=dashed, label="resolved"];
+    classify_intent -> clarification_engine [style=dashed, label="ambiguous"];
+    classify_intent -> format_meta [style=dashed, label="meta_query"];
+    classify_intent -> handle_out_of_scope_query [style=dashed, label="out_of_scope"];
+    classify_intent -> load_schema [style=dashed, label="data_query"];
+    diagnose_execution_error -> repair_sql;
+    execute_sql -> diagnose_execution_error [style=dashed, label="error"];
+    execute_sql -> format_answer [style=dashed, label="success"];
+    generate_sql -> validate_sql;
+    load_schema -> generate_sql;
+    repair_sql -> validate_sql;
+    validate_sql -> execute_sql [style=dashed, label="valid"];
+    validate_sql -> format_answer [style=dashed, label="max_repairs"];
+    validate_sql -> repair_sql [style=dashed, label="invalid"];
+    format_answer -> End;
+    format_meta -> End;
+    handle_out_of_scope_query -> End;
+}`;
+
+    let scale = 1.0;
+    let translateX = 0;
+    let translateY = 0;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+
+    async function renderGraphviz() {
+      const viewport = document.getElementById('graph-viewport');
+      try {
+        if (typeof Viz !== 'undefined') {
+          const viz = await Viz.instance();
+          const svgElement = viz.renderSVGElement(GRAPHVIZ_SRC);
+          viewport.innerHTML = '';
+          viewport.appendChild(svgElement);
+          resetTransform();
+        } else {
+          viewport.innerHTML = `<div style="color:#a1a1aa">Loading Graphviz...</div>`;
+        }
+      } catch (err) {
+        viewport.innerHTML = `<div style="color:#ef4444">Failed to render workflow diagram: ${err}</div>`;
+      }
+    }
+
+    function applyTransform() {
+      const viewport = document.getElementById('graph-viewport');
+      viewport.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+
+    function zoom(factor) {
+      scale = Math.min(Math.max(scale * factor, 0.2), 5);
+      applyTransform();
+    }
+
+    function resetTransform() {
+      scale = 1.0;
+      translateX = 0;
+      translateY = 0;
+      applyTransform();
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    const container = document.getElementById('canvas-container');
+    container.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      isPanning = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isPanning = false;
+    });
+
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      zoom(zoomFactor);
+    }, { passive: false });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderGraphviz();
+    });
+  </script>
+</body>
+</html>
