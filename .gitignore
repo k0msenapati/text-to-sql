@@ -12,7 +12,8 @@ wheels/
 .files/
 .pytest_cache/
 .ruff_cache/
-.chainlit/
+.chainlit/*
+!.chainlit/config.toml
 
 .env
 data/

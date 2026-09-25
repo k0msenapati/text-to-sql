@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: text-to-sql-assistant
+    runtime: python
+    plan: free
+    buildCommand: "pip install uv && uv sync && uv run python scripts/seed.py"
+    startCommand: "uv run chainlit run app.py --host 0.0.0.0 --port $PORT --headless"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.0"
+      - key: GROQ_API_KEY
+        sync: false
