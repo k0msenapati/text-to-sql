@@ -4,21 +4,10 @@ An intelligent Text-to-SQL agent that translates natural language into validated
 
 ```mermaid
 graph TD;
-	__start__([Start])
-	classify_intent(classify_intent)
-	clarification_engine(clarification_engine)
-	load_schema(load_schema)
-	generate_sql(generate_sql)
-	validate_sql(validate_sql)
-	repair_sql(repair_sql)
-	execute_sql(execute_sql)
-	diagnose_execution_error(diagnose_execution_error)
-	format_answer(format_answer)
-	format_meta(format_meta)
-	handle_out_of_scope_query(handle_out_of_scope_query)
-	__end__([End])
-	__start__ --> classify_intent;
-	clarification_engine -.-> __end__;
+	Start([Start])
+	End([End])
+	Start --> classify_intent;
+	clarification_engine -.-> End;
 	clarification_engine -.-> load_schema;
 	classify_intent -.-> clarification_engine;
 	classify_intent -.-> format_meta;
@@ -33,9 +22,9 @@ graph TD;
 	validate_sql -.-> execute_sql;
 	validate_sql -.-> format_answer;
 	validate_sql -.-> repair_sql;
-	format_answer --> __end__;
-	format_meta --> __end__;
-	handle_out_of_scope_query --> __end__;
+	format_answer --> End;
+	format_meta --> End;
+	handle_out_of_scope_query --> End;
 ```
 
 <details>

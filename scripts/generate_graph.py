@@ -9,16 +9,18 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root_dir / "src"))
 sys.path.insert(0, str(root_dir))
 
-from text_to_sql.graph import agent
-from text_to_sql.utils import get_mermaid_graph
+from text_to_sql.graph import agent  # noqa: E402
+from text_to_sql.utils import get_mermaid_graph  # noqa: E402
 
 
 def clean_mermaid_for_github(raw_mermaid: str) -> str:
     """
     Cleans up raw LangGraph mermaid markup for optimal GitHub rendering:
     - Strips YAML config frontmatter
-    - Strips hardcoded classDef fill colors (e.g., fill:#f2f0ff) that cause white-on-white invisible text in GitHub dark mode
-    - Normalizes node names and labels
+    - Strips all classDef, style, and color definitions
+    - Removes class annotations (:::className) and HTML tags
+    - Normalizes start and end nodes into standard GitHub-friendly shapes
+    - Produces a clean normal graph with no colors or extra styles for GitHub
     """
     lines = []
     in_yaml = False
@@ -27,14 +29,36 @@ def clean_mermaid_for_github(raw_mermaid: str) -> str:
         if trimmed == "---":
             in_yaml = not in_yaml
             continue
-        if in_yaml or trimmed.startswith("classDef"):
+        if in_yaml:
+            continue
+        if trimmed.startswith(("classDef", "style", "linkStyle", "class ")):
             continue
 
-        cleaned_line = line.replace("<p>__start__</p>", "Start").replace("<p>__end__</p>", "End")
-        cleaned_line = cleaned_line.replace(":::first", "").replace(":::last", "")
-        lines.append(cleaned_line)
+        # Remove class attachments like :::first, :::last, :::default
+        cleaned_line = re.sub(r":::\w+", "", line)
+        # Remove any HTML tags like <p>...</p>
+        cleaned_line = re.sub(r"</?[a-zA-Z0-9]+[^>]*>", "", cleaned_line)
+        # Normalize start and end tokens
+        cleaned_line = cleaned_line.replace("__start__", "Start").replace(
+            "__end__", "End"
+        )
+        if cleaned_line.strip():
+            lines.append(cleaned_line)
 
-    return "\n".join(lines).strip()
+    result_lines = []
+    header_found = False
+    for line in lines:
+        result_lines.append(line)
+        if not header_found and (
+            "graph TD" in line or "graph LR" in line or "flowchart" in line
+        ):
+            header_found = True
+            if not any("Start([" in entry for entry in lines):
+                result_lines.append("\tStart([Start])")
+            if not any("End([" in entry for entry in lines):
+                result_lines.append("\tEnd([End])")
+
+    return "\n".join(result_lines).strip()
 
 
 def update_readme(mermaid_code: str, readme_path: Path) -> bool:
@@ -85,7 +109,7 @@ def main():
     )
     args = parser.parse_args()
 
-    mermaid_code = clean_mermaid_for_github(get_mermaid_graph(agent))
+    mermaid_code = clean_mermaid_for_github(get_mermaid_graph(agent, with_styles=False))
 
     if args.print_only:
         print(f"```mermaid\n{mermaid_code}\n```")
